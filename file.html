@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Countdown Tracker</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #eef2f7;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 2rem;
+    }
+
+    h1 {
+      color: #333;
+    }
+
+    form {
+      background: white;
+      padding: 1.5rem;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      margin-bottom: 1.5rem;
+      width: 300px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 0.5rem;
+    }
+
+    input, button {
+      padding: 0.5rem;
+      margin-bottom: 1rem;
+      width: 100%;
+      font-size: 1rem;
+    }
+
+    #countdowns {
+      width: 100%;
+      max-width: 400px;
+    }
+
+    .countdown-item {
+      background: white;
+      padding: 1rem;
+      margin-bottom: 1rem;
+      border-radius: 10px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .countdown-item span {
+      display: block;
+      margin-top: 0.5rem;
+    }
+
+    button.delete {
+      margin-top: 0.5rem;
+      background: #f44336;
+      color: white;
+      border: none;
+      padding: 0.5rem;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    button.delete:hover {
+      background: #d32f2f;
+    }
+  </style>
+</head>
+<body>
+  <h1>Countdown Tracker</h1>
+  <form id="countdownForm">
+    <label>
+      Label:
+      <input type="text" id="label" required>
+    </label>
+    <label>
+      Date:
+      <input type="date" id="date" required>
+    </label>
+    <button type="submit">Add Countdown</button>
+  </form>
+  <div id="countdowns"></div>
+
+  <script>
+    const form = document.getElementById('countdownForm');
+    const labelInput = document.getElementById('label');
+    const dateInput = document.getElementById('date');
+    const countdownsContainer = document.getElementById('countdowns');
+
+    function loadCountdowns() {
+      const stored = JSON.parse(localStorage.getItem('countdowns') || '[]');
+      return stored;
+    }
+
+    function saveCountdowns(countdowns) {
+      localStorage.setItem('countdowns', JSON.stringify(countdowns));
+    }
+
+    function renderCountdowns() {
+      const countdowns = loadCountdowns();
+      countdownsContainer.innerHTML = '';
+
+      countdowns.forEach((item, index) => {
+        const today = new Date();
+        const target = new Date(item.date);
+        today.setHours(0,0,0,0);
+        target.setHours(0,0,0,0);
+
+        const diffTime = target - today;
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+        let message = '';
+        if (diffDays < 0) {
+          message = `${item.label} was ${Math.abs(diffDays)} day(s) ago.`;
+        } else if (diffDays === 0) {
+          message = `${item.label} is today!`;
+        } else {
+          message = `${diffDays} day(s) until ${item.label}.`;
+        }
+
+        const div = document.createElement('div');
+        div.className = 'countdown-item';
+        div.innerHTML = `
+          <strong>${item.label}</strong>
+          <span>${message}</span>
+          <button class="delete" data-index="${index}">Delete</button>
+        `;
+        countdownsContainer.appendChild(div);
+      });
+    }
+
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const label = labelInput.value.trim();
+      const date = dateInput.value;
+
+      if (!label || !date) return;
+
+      const countdowns = loadCountdowns();
+      countdowns.push({ label, date });
+      saveCountdowns(countdowns);
+      renderCountdowns();
+
+      form.reset();
+    });
+
+    countdownsContainer.addEventListener('click', (e) => {
+      if (e.target.classList.contains('delete')) {
+        const index = e.target.dataset.index;
+        const countdowns = loadCountdowns();
+        countdowns.splice(index, 1);
+        saveCountdowns(countdowns);
+        renderCountdowns();
+      }
+    });
+
+    renderCountdowns();
+  </script>
+</body>
+</html>
